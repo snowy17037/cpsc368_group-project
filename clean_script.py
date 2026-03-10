@@ -64,6 +64,8 @@ def clean_imdb_movies():
     if "year" in df.columns:
         df["year"] = df["year"].astype(int)
 
+    df = df.drop_duplicates()
+
     out_path = os.path.join(DATA_CLEAN_DIR, "imdb_movies_clean.csv")
     df.to_csv(out_path, index=False)
     print(f"Saved {out_path} with shape {df.shape}")
@@ -104,9 +106,12 @@ def clean_reddit():
     # Removing duplicate mentions within a turn
     mentions = mentions.drop_duplicates(subset=["turn_id", "imdb_title_id"])
 
+    mentions = mentions.drop_duplicates()
+
     out_path = os.path.join(DATA_CLEAN_DIR, "reddit_mentions_clean.csv")
     mentions.to_csv(out_path, index=False)
     print(f"Saved {out_path} with shape {mentions.shape}")
+
 
 # 3) Clean BOM -> bom_gross_clean.csv
 
@@ -114,9 +119,31 @@ def clean_bom():
     path = os.path.join(DATA_RAW_DIR, "BOM.csv")
     df = pd.read_csv(path)
 
+    # core columns
     df = df[["movie", "year", "domestic_gross", "foreign_gross"]]
 
+    #columns that are mostly null
     df = drop_mostly_null(df, threshold=0.5)
 
+    # Rename and standardize title
     df = df.rename(columns={"movie": "title"})
-    df["title"]
+    df["title"] = clean_title(df["title"])
+
+    # numeric year and filter to BOM range
+    df["year"] = pd.to_numeric(df["year"], errors="coerce")
+    df = df[df["year"].between(2010, 2018, inclusive="both")]
+    df["year"] = df["year"].astype(int)
+
+    df["domestic_gross"] = pd.to_numeric(df["domestic_gross"], errors="coerce")
+    df["foreign_gross"] = pd.to_numeric(df["foreign_gross"], errors="coerce")
+
+    df = df.dropna(subset=["title", "year"])
+    df = df.dropna(subset=["domestic_gross", "foreign_gross"], how="all")
+
+    df = df[(df["domestic_gross"] >= 0) | (df["foreign_gross"] >= 0)]
+
+    df = df.drop_duplicates()
+
+    out_path = os.path.join(DATA_CLEAN_DIR, "bom_gross_clean.csv")
+    df.to_csv(out_path, index=False)
+    print(f"Saved {out_path} with shape {df.shape}")
