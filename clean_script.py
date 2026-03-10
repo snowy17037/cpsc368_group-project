@@ -63,8 +63,8 @@ def clean_imdb_movies():
         df["title"] = clean_title(df["title"])
     if "year" in df.columns:
         df["year"] = df["year"].astype(int)
-
-    df = df.drop_duplicates()
+    
+    df = df.sort_values(["imdb_title_id"]).drop_duplicates(subset=["imdb_title_id"], keep="first")
 
     out_path = os.path.join(DATA_CLEAN_DIR, "imdb_movies_clean.csv")
     df.to_csv(out_path, index=False)
@@ -103,10 +103,12 @@ def clean_reddit():
 
     mentions = pd.DataFrame(rows)
 
-    # Removing duplicate mentions within a turn
-    mentions = mentions.drop_duplicates(subset=["turn_id", "imdb_title_id"])
+    mentions = (
+        mentions
+        .sort_values(["turn_id", "imdb_title_id"])
+        .drop_duplicates(subset=["turn_id", "imdb_title_id"], keep="first")
+    )
 
-    mentions = mentions.drop_duplicates()
 
     out_path = os.path.join(DATA_CLEAN_DIR, "reddit_mentions_clean.csv")
     mentions.to_csv(out_path, index=False)
@@ -142,8 +144,18 @@ def clean_bom():
 
     df = df[(df["domestic_gross"] >= 0) | (df["foreign_gross"] >= 0)]
 
-    df = df.drop_duplicates()
+    df = (
+        df
+        .sort_values(["title", "year"])
+        .drop_duplicates(subset=["title", "year"], keep="first")
+    )
+
 
     out_path = os.path.join(DATA_CLEAN_DIR, "bom_gross_clean.csv")
     df.to_csv(out_path, index=False)
     print(f"Saved {out_path} with shape {df.shape}")
+
+if __name__ == "__main__":
+    clean_imdb_movies()
+    clean_reddit()
+    clean_bom()
