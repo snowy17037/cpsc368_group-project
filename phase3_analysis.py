@@ -1,92 +1,101 @@
-"""
-phase3_analysis.py
 
-CPSC 368 - Phase 3
-Connects to Oracle, runs the three final SQL queries, retrieves the results into pandas,
-and creates the required visualizations/tables for the project report.
 
-External libraries used beyond Oracle:
-- pandas
-- matplotlib
-- numpy
-- scipy
-- statsmodels
-
-How to run:
-1. Make sure your project_load.sql has already been run on the Oracle server.
-2. Set your Oracle credentials as environment variables, for example:
-
-   export ORACLE_USER="your_cwl"
-   export ORACLE_PASSWORD="your_password"
-   export ORACLE_DSN="dbhost.students.cs.ubc.ca/orcl"
-
-   or on Windows:
-   set ORACLE_USER=your_cwl
-   set ORACLE_PASSWORD=your_password
-   set ORACLE_DSN=dbhost.students.cs.ubc.ca/orcl
-
-3. Then run:
-   python phase3_analysis.py
-
-Outputs:
-- CSV files with the query results
-- PNG plots for each research question
-- TXT summaries for correlations/regressions
-"""
-
-import os
 from pathlib import Path
+import subprocess
 
-import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import oracledb
 from scipy.stats import pearsonr
 import statsmodels.formula.api as smf
 
 
-# =========================
-# Configuration
-# =========================
 
 OUTPUT_DIR = Path("phase3_outputs")
 OUTPUT_DIR.mkdir(exist_ok=True)
 
-ORACLE_USER = "ansh1304"
+ORACLE_USERNAME = "ora_ansh1304"
 ORACLE_PASSWORD = "a27811678"
-ORACLE_DSN = "remote.students.cs.ubc.ca/stu"
+ORACLE_SERVICE = "stu"
 
-# Optional: change figure DPI if needed
 FIG_DPI = 300
+SQLPLUS_DELIMITER = "|"
 
 
-# =========================
-# Oracle connection helper
-# =========================
+# SQL*Plus helper
 
-def get_connection():
-    return oracledb.connect(
-        user=ORACLE_USER,
-        password=ORACLE_PASSWORD,
-        dsn=ORACLE_DSN
+
+def run_query(sql: str, column_names: list[str]) -> pd.DataFrame:
+    """
+    Execute a SQL query through SQL*Plus and return the result as a pandas DataFrame.
+    Uses SQL*Plus /nolog, connects inside the script, and only keeps rows that
+    match the expected number of columns.
+    """
+    clean_sql = sql.strip().rstrip(";")
+
+    sqlplus_script = f"""
+CONNECT {ORACLE_USERNAME}/{ORACLE_PASSWORD}@{ORACLE_SERVICE}
+SET PAGESIZE 0
+SET FEEDBACK OFF
+SET VERIFY OFF
+SET HEADING OFF
+SET ECHO OFF
+SET TRIMSPOOL ON
+SET TAB OFF
+SET LINESIZE 32767
+SET MARKUP CSV ON DELIMITER '{SQLPLUS_DELIMITER}' QUOTE OFF
+{clean_sql};
+EXIT;
+"""
+
+    result = subprocess.run(
+        ["sqlplus", "-s", "/nolog"],
+        input=sqlplus_script,
+        text=True,
+        capture_output=True
     )
 
+    combined_output = (result.stdout or "") + "\n" + (result.stderr or "")
 
-def run_query(connection, sql: str) -> pd.DataFrame:
-    """
-    Execute a SQL query and return the results as a pandas DataFrame.
-    Column names are normalized to lowercase for easier Python handling.
-    """
-    with connection.cursor() as cursor:
-        cursor.execute(sql)
-        rows = cursor.fetchall()
-        columns = [desc[0].lower() for desc in cursor.description]
-    return pd.DataFrame(rows, columns=columns)
+    if result.returncode != 0 or "ORA-" in combined_output or "SP2-" in combined_output:
+        raise RuntimeError(
+            f"SQL*Plus query failed.\nSTDOUT:\n{result.stdout}\nSTDERR:\n{result.stderr}"
+        )
+
+    output = result.stdout.strip()
+
+    if not output:
+        return pd.DataFrame(columns=column_names)
+
+    raw_lines = [line.strip() for line in output.splitlines() if line.strip()]
+    parsed_rows = []
+
+    for line in raw_lines:
+        if line.startswith("Connected to:"):
+            continue
+        if line.startswith("Disconnected from"):
+            continue
+        if line.startswith("Copyright"):
+            continue
+        if line.startswith("Last Successful login time:"):
+            continue
+        if line.startswith("Oracle Database"):
+            continue
+        if line.startswith("Version"):
+            continue
+
+        parts = [part.strip() for part in line.split(SQLPLUS_DELIMITER)]
+        if len(parts) == len(column_names):
+            parsed_rows.append(parts)
+
+    if not parsed_rows:
+        return pd.DataFrame(columns=column_names)
+
+    return pd.DataFrame(parsed_rows, columns=column_names)
 
 
-# =========================
-# Shared helpers
-# =========================
+
+#  helpers
+
 
 def save_dataframe(df: pd.DataFrame, filename: str) -> None:
     path = OUTPUT_DIR / filename
@@ -109,9 +118,6 @@ def clean_numeric_columns(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
 
 
 def map_primary_genre(genre_value: str) -> str:
-    """
-    Map a multi-genre string to the first relevant project genre.
-    """
     if not isinstance(genre_value, str):
         return "Other"
 
@@ -128,13 +134,11 @@ def map_primary_genre(genre_value: str) -> str:
 
 
 def add_heatmap_labels(ax, corr_df: pd.DataFrame) -> None:
-    """
-    Write numeric correlation values inside each heatmap cell.
-    """
     for i in range(corr_df.shape[0]):
         for j in range(corr_df.shape[1]):
             value = corr_df.iloc[i, j]
-            ax.text(j, i, f"{value:.2f}", ha="center", va="center", color="black")
+            label = "NaN" if pd.isna(value) else f"{value:.2f}"
+            ax.text(j, i, label, ha="center", va="center", color="black")
 
 
 # =========================
@@ -144,9 +148,9 @@ def add_heatmap_labels(ax, corr_df: pd.DataFrame) -> None:
 RQ1_SQL = """
 SELECT
     im.imdb_title_id,
-    im.title,
+    REPLACE(im.title, '|', ' ') AS title,
     im.year,
-    im.genre,
+    REPLACE(im.genre, '|', ' ') AS genre,
     NVL(r.num_recommendations, 0) AS num_recommendations,
     b.domestic_gross,
     b.foreign_gross,
@@ -154,7 +158,7 @@ SELECT
     (b.foreign_gross / NULLIF(b.domestic_gross + b.foreign_gross, 0)) AS foreign_share
 FROM imdb_movies im
 JOIN bom_gross b
-    ON im.title = b.title
+    ON LOWER(TRIM(im.title)) = LOWER(TRIM(b.title))
    AND im.year = b.year
 LEFT JOIN (
     SELECT
@@ -173,14 +177,29 @@ ORDER BY num_recommendations DESC
 """
 
 
-def analyze_rq1(connection) -> pd.DataFrame:
+def analyze_rq1() -> pd.DataFrame:
     """
     RQ1:
     How does Reddit recommendation frequency relate to the proportion of a movie's
     box office revenue earned internationally versus domestically among horror, action,
     and comedy movies?
     """
-    df = run_query(connection, RQ1_SQL)
+    df = run_query(
+        RQ1_SQL,
+        [
+            "imdb_title_id",
+            "title",
+            "year",
+            "genre",
+            "num_recommendations",
+            "domestic_gross",
+            "foreign_gross",
+            "total_revenue",
+            "foreign_share",
+        ],
+    )
+
+    df["genre"] = df["genre"].astype(str).str.strip()
 
     df = clean_numeric_columns(
         df,
@@ -195,17 +214,16 @@ def analyze_rq1(connection) -> pd.DataFrame:
     )
 
     df["genre_filtered"] = df["genre"].apply(map_primary_genre)
-
-    # Keep only rows usable for plotting/statistics
-    df = df.dropna(subset=["num_recommendations", "foreign_share", "genre_filtered"])
+    df = df.dropna(subset=["num_recommendations", "foreign_share"])
     df = df[df["genre_filtered"].isin(["Horror", "Action", "Comedy"])]
 
     save_dataframe(df, "rq1_query_results.csv")
 
-    # --- Scatterplot ---
     plt.figure(figsize=(9, 6))
 
     genre_order = ["Horror", "Action", "Comedy"]
+    plotted_any = False
+
     for genre in genre_order:
         subset = df[df["genre_filtered"] == genre]
         if not subset.empty:
@@ -215,17 +233,18 @@ def analyze_rq1(connection) -> pd.DataFrame:
                 alpha=0.7,
                 label=genre,
             )
+            plotted_any = True
 
     plt.title("RQ1: Reddit Recommendations vs Foreign Revenue Share by Genre")
     plt.xlabel("Number of Reddit Recommendations")
     plt.ylabel("Foreign Revenue Share")
-    plt.legend(title="Genre")
+    if plotted_any:
+        plt.legend(title="Genre")
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "rq1_scatter.png", dpi=FIG_DPI)
     plt.close()
     print(f"Saved plot to {OUTPUT_DIR / 'rq1_scatter.png'}")
 
-    # --- Pearson correlations ---
     stats_lines = []
 
     if len(df) >= 2:
@@ -246,8 +265,6 @@ def analyze_rq1(connection) -> pd.DataFrame:
         else:
             stats_lines.append(f"{genre} Pearson correlation: not enough rows")
 
-    # --- Regression with interaction ---
-    # Using C(genre_filtered) treats genre as a categorical variable
     rq1_model_df = df.dropna(subset=["num_recommendations", "foreign_share", "genre_filtered"]).copy()
 
     if len(rq1_model_df) >= 3:
@@ -279,7 +296,7 @@ FROM imdb_movies i
 JOIN reddit_mentions r
     ON i.imdb_title_id = r.imdb_title_id
 JOIN bom_gross b
-    ON LOWER(i.title) = LOWER(b.title)
+    ON LOWER(TRIM(i.title)) = LOWER(TRIM(b.title))
    AND i.year = b.year
 GROUP BY
     i.title,
@@ -290,25 +307,30 @@ GROUP BY
 """
 
 
-def analyze_rq2(connection) -> pd.DataFrame:
+def analyze_rq2() -> pd.DataFrame:
     """
     RQ2:
     How does the average IMDb vote on a movie relate to the number of Reddit
     recommendations versus the box office success?
     """
-    df = run_query(connection, RQ2_SQL)
+    df = run_query(
+        RQ2_SQL,
+        [
+            "avg_vote",
+            "total_gross",
+            "reddit_discussion_count",
+        ],
+    )
 
     df = clean_numeric_columns(df, ["avg_vote", "total_gross", "reddit_discussion_count"])
     df = df.dropna(subset=["avg_vote", "total_gross", "reddit_discussion_count"])
 
     save_dataframe(df, "rq2_query_results.csv")
 
-    # --- Correlation matrix table ---
     corr_df = df[["avg_vote", "reddit_discussion_count", "total_gross"]].corr()
     corr_df.to_csv(OUTPUT_DIR / "rq2_correlation_matrix.csv")
     print(f"Saved correlation matrix to {OUTPUT_DIR / 'rq2_correlation_matrix.csv'}")
 
-    # --- Correlation heatmap ---
     plt.figure(figsize=(8, 6))
     ax = plt.gca()
 
@@ -328,26 +350,22 @@ def analyze_rq2(connection) -> pd.DataFrame:
     plt.close()
     print(f"Saved plot to {OUTPUT_DIR / 'rq2_correlation_heatmap.png'}")
 
-    # --- Optional regressions from your group notes/report ---
     stats_lines = []
     stats_lines.append("Correlation matrix:\n")
     stats_lines.append(corr_df.to_string())
     stats_lines.append("\n")
 
-    # Simple regression: total_gross ~ avg_vote
     if len(df) >= 3:
         model_1 = smf.ols("total_gross ~ avg_vote", data=df).fit()
         stats_lines.append("Regression 1: total_gross ~ avg_vote\n")
         stats_lines.append(str(model_1.summary()))
         stats_lines.append("\n")
 
-        # Simple regression: total_gross ~ reddit_discussion_count
         model_2 = smf.ols("total_gross ~ reddit_discussion_count", data=df).fit()
         stats_lines.append("Regression 2: total_gross ~ reddit_discussion_count\n")
         stats_lines.append(str(model_2.summary()))
         stats_lines.append("\n")
 
-        # Multiple regression: total_gross ~ avg_vote + reddit_discussion_count
         model_3 = smf.ols(
             "total_gross ~ avg_vote + reddit_discussion_count",
             data=df,
@@ -411,38 +429,49 @@ HAVING AVG(upvotes) IS NOT NULL
 """
 
 
-def analyze_rq3(connection) -> pd.DataFrame:
+def analyze_rq3() -> pd.DataFrame:
     """
     RQ3:
     How does the average number of upvotes for Reddit recommendations and discussion
     posts vary by movie duration, and how does this relationship change based on genre?
     """
-    df = run_query(connection, RQ3_SQL)
+    df = run_query(
+        RQ3_SQL,
+        [
+            "duration_bins",
+            "genre_filtered",
+            "avg_upvotes",
+        ],
+    )
 
-    df = clean_numeric_columns(df, ["avg_upvotes"])
+    df["avg_upvotes"] = pd.to_numeric(df["avg_upvotes"].astype(str).str.strip(), errors="coerce")
+    df["duration_bins"] = df["duration_bins"].astype(str).str.strip()
+    df["genre_filtered"] = df["genre_filtered"].astype(str).str.strip()
+
     df = df.dropna(subset=["duration_bins", "genre_filtered", "avg_upvotes"])
 
-    # Keep duration bins in logical order
     duration_order = ["60-79", "80-99", "100-119", "120-139", "140-159", "160-179", "180-200"]
     df["duration_bins"] = pd.Categorical(df["duration_bins"], categories=duration_order, ordered=True)
     df = df.sort_values(["duration_bins", "genre_filtered"])
 
     save_dataframe(df, "rq3_query_results.csv")
 
-    # --- Grouped bar chart ---
     pivot_df = df.pivot(index="duration_bins", columns="genre_filtered", values="avg_upvotes")
     pivot_df = pivot_df.reindex(duration_order)
+    pivot_df = pivot_df.apply(pd.to_numeric, errors="coerce")
 
-    ax = pivot_df.plot(kind="bar", figsize=(10, 6), rot=0)
-
-    ax.set_title("RQ3: Average Reddit Upvotes by Movie Duration Bin and Genre")
-    ax.set_xlabel("Movie Duration Bin")
-    ax.set_ylabel("Average Reddit Upvotes")
-    ax.legend(title="Genre")
-    plt.tight_layout()
-    plt.savefig(OUTPUT_DIR / "rq3_grouped_bar_chart.png", dpi=FIG_DPI)
-    plt.close()
-    print(f"Saved plot to {OUTPUT_DIR / 'rq3_grouped_bar_chart.png'}")
+    if pivot_df.dropna(how="all").empty:
+        print("RQ3 plot skipped: no numeric data to plot.")
+    else:
+        ax = pivot_df.plot(kind="bar", figsize=(10, 6), rot=0)
+        ax.set_title("RQ3: Average Reddit Upvotes by Movie Duration Bin and Genre")
+        ax.set_xlabel("Movie Duration Bin")
+        ax.set_ylabel("Average Reddit Upvotes")
+        ax.legend(title="Genre")
+        plt.tight_layout()
+        plt.savefig(OUTPUT_DIR / "rq3_grouped_bar_chart.png", dpi=FIG_DPI)
+        plt.close()
+        print(f"Saved plot to {OUTPUT_DIR / 'rq3_grouped_bar_chart.png'}")
 
     return df
 
@@ -452,28 +481,19 @@ def analyze_rq3(connection) -> pd.DataFrame:
 # =========================
 
 def main():
-    print("Connecting to Oracle...")
-    connection = get_connection()
-    print("Connected.\n")
+    print("Running RQ1 analysis...")
+    rq1_df = analyze_rq1()
+    print(f"RQ1 rows: {len(rq1_df)}\n")
 
-    try:
-        print("Running RQ1 analysis...")
-        rq1_df = analyze_rq1(connection)
-        print(f"RQ1 rows: {len(rq1_df)}\n")
+    print("Running RQ2 analysis...")
+    rq2_df = analyze_rq2()
+    print(f"RQ2 rows: {len(rq2_df)}\n")
 
-        print("Running RQ2 analysis...")
-        rq2_df = analyze_rq2(connection)
-        print(f"RQ2 rows: {len(rq2_df)}\n")
+    print("Running RQ3 analysis...")
+    rq3_df = analyze_rq3()
+    print(f"RQ3 rows: {len(rq3_df)}\n")
 
-        print("Running RQ3 analysis...")
-        rq3_df = analyze_rq3(connection)
-        print(f"RQ3 rows: {len(rq3_df)}\n")
-
-        print("All outputs saved in:", OUTPUT_DIR.resolve())
-
-    finally:
-        connection.close()
-        print("Oracle connection closed.")
+    print("All outputs saved in:", OUTPUT_DIR.resolve())
 
 
 if __name__ == "__main__":
