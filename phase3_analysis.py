@@ -21,7 +21,7 @@ FIG_DPI = 300
 SQLPLUS_DELIMITER = "|"
 
 
-# SQL*Plus helper
+# SQLPlus helper
 
 
 def run_query(sql: str, column_names: list[str]) -> pd.DataFrame:
@@ -141,9 +141,7 @@ def add_heatmap_labels(ax, corr_df: pd.DataFrame) -> None:
             ax.text(j, i, label, ha="center", va="center", color="black")
 
 
-# =========================
 # RQ1
-# =========================
 
 RQ1_SQL = """
 SELECT
@@ -282,10 +280,7 @@ def analyze_rq1() -> pd.DataFrame:
 
     return df
 
-
-# =========================
 # RQ2
-# =========================
 
 RQ2_SQL = """
 SELECT
@@ -388,10 +383,7 @@ def analyze_rq2() -> pd.DataFrame:
 
     return df
 
-
-# =========================
 # RQ3
-# =========================
 
 RQ3_SQL = """
 SELECT
@@ -475,10 +467,7 @@ def analyze_rq3() -> pd.DataFrame:
 
     return df
 
-
-# =========================
 # Main
-# =========================
 
 def main():
     print("Running RQ1 analysis...")
@@ -497,4 +486,8 @@ def main():
 
 
 if __name__ == "__main__":
+    import oracledb
+    dsn = oracledb.makedsn("localhost", 1522, service_name="stu")
+    connection = oracledb.connect(user="ora_ansh1304", password="a27811678", dsn=dsn)
     main()
+    connection.close()
