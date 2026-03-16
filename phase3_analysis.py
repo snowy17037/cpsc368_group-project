@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from scipy.stats import pearsonr
 import statsmodels.formula.api as smf
+from tempfile import NamedTemporaryFile
 
 
 
@@ -140,6 +141,12 @@ def add_heatmap_labels(ax, corr_df: pd.DataFrame) -> None:
             label = "NaN" if pd.isna(value) else f"{value:.2f}"
             ax.text(j, i, label, ha="center", va="center", color="black")
 
+def format_axis_labels(ax, title: str, xlabel: str, ylabel: str) -> None:
+    ax.set_title(title, fontsize=16, pad=12)
+    ax.set_xlabel(xlabel, fontsize=12)
+    ax.set_ylabel(ylabel, fontsize=12)
+    ax.tick_params(axis="both", labelsize=11)            
+
 
 # RQ1
 
@@ -233,11 +240,16 @@ def analyze_rq1() -> pd.DataFrame:
             )
             plotted_any = True
 
-    plt.title("RQ1: Reddit Recommendations vs Foreign Revenue Share by Genre")
-    plt.xlabel("Number of Reddit Recommendations")
-    plt.ylabel("Foreign Revenue Share")
-    if plotted_any:
-        plt.legend(title="Genre")
+    ax = plt.gca()
+    format_axis_labels(
+        ax,
+        "How Reddit Recommendation Frequency Relates to Foreign Revenue Share",
+        "Number of Reddit Recommendations",
+        "Share of Total Revenue Earned Internationally"
+)
+if plotted_any:
+    plt.legend(title="Movie Genre", fontsize=10, title_fontsize=11)
+
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "rq1_scatter.png", dpi=FIG_DPI)
     plt.close()
@@ -332,14 +344,22 @@ def analyze_rq2() -> pd.DataFrame:
     im = ax.imshow(corr_df.values, aspect="auto")
     plt.colorbar(im)
 
-    ax.set_xticks(range(len(corr_df.columns)))
-    ax.set_yticks(range(len(corr_df.index)))
-    ax.set_xticklabels(corr_df.columns, rotation=30, ha="right")
-    ax.set_yticklabels(corr_df.index)
+    pretty_labels = [
+    "Average IMDb Rating",
+    "Reddit Discussion Count",
+    "Total Box Office Gross"
+    ]
+    ax.set_xticklabels(pretty_labels, rotation=25, ha="right")
+    ax.set_yticklabels(pretty_labels)
 
     add_heatmap_labels(ax, corr_df)
 
-    plt.title("RQ2: Correlation Heatmap of Average Vote, Reddit Discussion Count, and Total Gross")
+    format_axis_labels(
+    ax,
+    "Correlation Between IMDb Rating, Reddit Discussion, and Total Box Office Gross",
+    "Variables Compared",
+    "Variables Compared"
+    )
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "rq2_correlation_heatmap.png", dpi=FIG_DPI)
     plt.close()
@@ -456,10 +476,13 @@ def analyze_rq3() -> pd.DataFrame:
         print("RQ3 plot skipped: no numeric data to plot.")
     else:
         ax = pivot_df.plot(kind="bar", figsize=(10, 6), rot=0)
-        ax.set_title("RQ3: Average Reddit Upvotes by Movie Duration Bin and Genre")
-        ax.set_xlabel("Movie Duration Bin")
-        ax.set_ylabel("Average Reddit Upvotes")
-        ax.legend(title="Genre")
+        format_axis_labels(
+            ax,
+            "Average Reddit Upvotes Across Movie Lengths and Genres",
+            "Movie Duration Range (Minutes)",
+            "Average Number of Reddit Upvotes"
+        )
+        ax.legend(title="Movie Genre", fontsize=10, title_fontsize=11)
         plt.tight_layout()
         plt.savefig(OUTPUT_DIR / "rq3_grouped_bar_chart.png", dpi=FIG_DPI)
         plt.close()
