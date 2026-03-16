@@ -486,8 +486,4 @@ def main():
 
 
 if __name__ == "__main__":
-    import oracledb
-    dsn = oracledb.makedsn("localhost", 1522, service_name="stu")
-    connection = oracledb.connect(user="ora_ansh1304", password="a27811678", dsn=dsn)
     main()
-    connection.close()
