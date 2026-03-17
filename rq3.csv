@@ -1,7 +1,0 @@
-SQL> SELECT 'test' FROM dual;
-
-'TES                                                                            
-----                                                                            
-test                                                                            
-
-SQL> SPOOL OFF
