@@ -1,35 +1,35 @@
-Overall Pearson correlation: 0.036412, p-value: 0.462172
-Horror Pearson correlation: -0.066662, p-value: 0.544402
-Action Pearson correlation: -0.026129, p-value: 0.706584
-Comedy Pearson correlation: 0.124458, p-value: 0.185090
+Overall Pearson correlation: 0.034787, p-value: 0.500123
+Horror Pearson correlation: -0.069740, p-value: 0.541381
+Action Pearson correlation: -0.025165, p-value: 0.727620
+Comedy Pearson correlation: 0.105241, p-value: 0.285313
 
 RQ1 regression summary:
 
                             OLS Regression Results                            
 ==============================================================================
-Dep. Variable:          foreign_share   R-squared:                       0.095
+Dep. Variable:          foreign_share   R-squared:                       0.096
 Model:                            OLS   Adj. R-squared:                  0.084
-Method:                 Least Squares   F-statistic:                     8.500
-Date:                Tue, 17 Mar 2026   Prob (F-statistic):           1.15e-07
-Time:                        21:12:51   Log-Likelihood:                -24.475
-No. Observations:                 410   AIC:                             60.95
-Df Residuals:                     404   BIC:                             85.05
+Method:                 Least Squares   F-statistic:                     7.891
+Date:                Fri, 20 Mar 2026   Prob (F-statistic):           4.44e-07
+Time:                        15:26:28   Log-Likelihood:                -28.555
+No. Observations:                 378   AIC:                             69.11
+Df Residuals:                     372   BIC:                             92.72
 Df Model:                           5                                         
 Covariance Type:            nonrobust                                         
 ===================================================================================================================
                                                       coef    std err          t      P>|t|      [0.025      0.975]
 -------------------------------------------------------------------------------------------------------------------
-Intercept                                           0.5774      0.021     27.807      0.000       0.537       0.618
-C(genre_filtered)[T.Comedy]                        -0.2102      0.034     -6.170      0.000      -0.277      -0.143
-C(genre_filtered)[T.Horror]                        -0.0442      0.039     -1.126      0.261      -0.121       0.033
-num_recommendations                             -8.901e-05      0.000     -0.327      0.744      -0.001       0.000
-num_recommendations:C(genre_filtered)[T.Comedy]     0.0008      0.001      1.453      0.147      -0.000       0.002
-num_recommendations:C(genre_filtered)[T.Horror]    -0.0003      0.001     -0.492      0.623      -0.002       0.001
+Intercept                                           0.5737      0.022     26.228      0.000       0.531       0.617
+C(genre_filtered)[T.Comedy]                        -0.2123      0.036     -5.917      0.000      -0.283      -0.142
+C(genre_filtered)[T.Horror]                        -0.0413      0.041     -1.002      0.317      -0.122       0.040
+num_recommendations                             -8.917e-05      0.000     -0.301      0.763      -0.001       0.000
+num_recommendations:C(genre_filtered)[T.Comedy]     0.0008      0.001      1.205      0.229      -0.000       0.002
+num_recommendations:C(genre_filtered)[T.Horror]    -0.0003      0.001     -0.499      0.618      -0.002       0.001
 ==============================================================================
-Omnibus:                        3.335   Durbin-Watson:                   1.538
-Prob(Omnibus):                  0.189   Jarque-Bera (JB):                3.198
-Skew:                          -0.165   Prob(JB):                        0.202
-Kurtosis:                       2.719   Cond. No.                         246.
+Omnibus:                        2.986   Durbin-Watson:                   1.870
+Prob(Omnibus):                  0.225   Jarque-Bera (JB):                2.779
+Skew:                          -0.143   Prob(JB):                        0.249
+Kurtosis:                       2.693   Cond. No.                         234.
 ==============================================================================
 
 Notes:
