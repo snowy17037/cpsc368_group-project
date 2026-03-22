@@ -175,7 +175,7 @@ def analyze_rq1(connection) -> pd.DataFrame:
     ax = plt.gca()
     format_axis_labels(
     ax,
-    "How Reddit Recommendation Frequency Relates to\nForeign and Domestic Revenue Share",
+    "How Reddit Recommendation Frequency Relates to\nInternational and Domestic Revenue Share",
     "Number of Reddit Recommendations",
     "Share of Total Revenue Earned Internationally\n(International share = 1 − Domestic Share)"
     )
