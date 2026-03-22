@@ -13,8 +13,8 @@ Regression 1: total_gross ~ avg_vote
 Dep. Variable:            total_gross   R-squared:                       0.205
 Model:                            OLS   Adj. R-squared:                  0.203
 Method:                 Least Squares   F-statistic:                     87.87
-Date:                Fri, 20 Mar 2026   Prob (F-statistic):           1.01e-18
-Time:                        15:26:29   Log-Likelihood:                -7122.9
+Date:                Sun, 22 Mar 2026   Prob (F-statistic):           1.01e-18
+Time:                        15:52:38   Log-Likelihood:                -7122.9
 No. Observations:                 342   AIC:                         1.425e+04
 Df Residuals:                     340   BIC:                         1.426e+04
 Df Model:                           1                                         
@@ -25,7 +25,7 @@ Covariance Type:            nonrobust
 Intercept  -7.094e+08   9.88e+07     -7.181      0.000   -9.04e+08   -5.15e+08
 avg_vote     1.45e+08   1.55e+07      9.374      0.000    1.15e+08    1.75e+08
 ==============================================================================
-Omnibus:                      162.814   Durbin-Watson:                   2.146
+Omnibus:                      162.814   Durbin-Watson:                   2.160
 Prob(Omnibus):                  0.000   Jarque-Bera (JB):              804.898
 Skew:                           2.013   Prob(JB):                    1.65e-175
 Kurtosis:                       9.347   Cond. No.                         44.4
@@ -42,8 +42,8 @@ Regression 2: total_gross ~ reddit_discussion_count
 Dep. Variable:            total_gross   R-squared:                       0.003
 Model:                            OLS   Adj. R-squared:                 -0.000
 Method:                 Least Squares   F-statistic:                    0.9796
-Date:                Fri, 20 Mar 2026   Prob (F-statistic):              0.323
-Time:                        15:26:29   Log-Likelihood:                -7161.7
+Date:                Sun, 22 Mar 2026   Prob (F-statistic):              0.323
+Time:                        15:52:38   Log-Likelihood:                -7161.7
 No. Observations:                 342   AIC:                         1.433e+04
 Df Residuals:                     340   BIC:                         1.434e+04
 Df Model:                           1                                         
@@ -54,7 +54,7 @@ Covariance Type:            nonrobust
 Intercept                1.968e+08    1.9e+07     10.330      0.000    1.59e+08    2.34e+08
 reddit_discussion_count   2.77e+05    2.8e+05      0.990      0.323   -2.74e+05    8.28e+05
 ==============================================================================
-Omnibus:                      201.125   Durbin-Watson:                   2.143
+Omnibus:                      201.125   Durbin-Watson:                   2.234
 Prob(Omnibus):                  0.000   Jarque-Bera (JB):             1231.309
 Skew:                           2.518   Prob(JB):                    4.21e-268
 Kurtosis:                      10.813   Cond. No.                         79.5
@@ -71,8 +71,8 @@ Regression 3: total_gross ~ avg_vote + reddit_discussion_count
 Dep. Variable:            total_gross   R-squared:                       0.238
 Model:                            OLS   Adj. R-squared:                  0.233
 Method:                 Least Squares   F-statistic:                     52.90
-Date:                Fri, 20 Mar 2026   Prob (F-statistic):           1.01e-20
-Time:                        15:26:29   Log-Likelihood:                -7115.8
+Date:                Sun, 22 Mar 2026   Prob (F-statistic):           1.01e-20
+Time:                        15:52:38   Log-Likelihood:                -7115.8
 No. Observations:                 342   AIC:                         1.424e+04
 Df Residuals:                     339   BIC:                         1.425e+04
 Df Model:                           2                                         
@@ -84,7 +84,7 @@ Intercept               -8.661e+08   1.05e+08     -8.226      0.000   -1.07e+09 
 avg_vote                 1.757e+08   1.72e+07     10.224      0.000    1.42e+08     2.1e+08
 reddit_discussion_count -1.055e+06   2.78e+05     -3.802      0.000    -1.6e+06   -5.09e+05
 ==============================================================================
-Omnibus:                      148.245   Durbin-Watson:                   2.091
+Omnibus:                      148.245   Durbin-Watson:                   2.121
 Prob(Omnibus):                  0.000   Jarque-Bera (JB):              641.638
 Skew:                           1.856   Prob(JB):                    4.68e-140
 Kurtosis:                       8.590   Cond. No.                         509.
