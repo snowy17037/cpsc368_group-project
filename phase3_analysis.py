@@ -177,9 +177,9 @@ def analyze_rq1(connection) -> pd.DataFrame:
     ax = plt.gca()
     format_axis_labels(
         ax,
-        "How Reddit Recommendation Frequency Relates to Foreign Revenue Share",
+        "How Reddit recommendation frequency relates to foreign and domestic revenue share",
         "Number of Reddit Recommendations",
-        "Share of Total Revenue Earned Internationally"
+        "Share of total revenue earned internationally (international revenue share = 1 - domestic revenue share)"
     )
 
     if plotted_any:
@@ -294,9 +294,11 @@ def analyze_rq2(connection) -> pd.DataFrame:
     format_axis_labels(
         ax,
         "Correlation Between IMDb Rating, Reddit Discussion, and Total Box Office Gross",
-        "Variables Compared",
-        "Variables Compared"
+        "",
+        ""
     )
+    ax.set_xlabel("")
+    ax.set_ylabel("")
 
     plt.tight_layout()
     plt.savefig(OUTPUT_DIR / "rq2_correlation_heatmap.png", dpi=FIG_DPI)
