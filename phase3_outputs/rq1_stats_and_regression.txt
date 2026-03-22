@@ -11,7 +11,7 @@ Dep. Variable:          foreign_share   R-squared:                       0.096
 Model:                            OLS   Adj. R-squared:                  0.084
 Method:                 Least Squares   F-statistic:                     7.891
 Date:                Sun, 22 Mar 2026   Prob (F-statistic):           4.44e-07
-Time:                        15:52:38   Log-Likelihood:                -28.555
+Time:                        16:04:33   Log-Likelihood:                -28.555
 No. Observations:                 378   AIC:                             69.11
 Df Residuals:                     372   BIC:                             92.72
 Df Model:                           5                                         

@@ -93,9 +93,7 @@ def format_axis_labels(ax, title: str, xlabel: str, ylabel: str) -> None:
     ax.tick_params(axis="both", labelsize=11)
 
 
-# =========================
 # RQ1
-# =========================
 
 RQ1_SQL = """
 SELECT
@@ -132,9 +130,9 @@ ORDER BY num_recommendations DESC
 def analyze_rq1(connection) -> pd.DataFrame:
     """
     RQ1:
-    How does Reddit recommendation frequency relate to the proportion of a movie's
-    box office revenue earned internationally versus domestically among horror, action,
-    and comedy movies?
+    How does Reddit Recommendation Frequency Relate to the Proportion of a Movie's
+    Box Office Revenue Earned Internationally vs Domestically Among Horror, Action,
+    and Comedy Movies?
     """
     df = run_query(connection, RQ1_SQL)
 
@@ -177,9 +175,9 @@ def analyze_rq1(connection) -> pd.DataFrame:
     ax = plt.gca()
     format_axis_labels(
     ax,
-    "How Reddit recommendation frequency relates to\nforeign and domestic revenue share",
+    "How Reddit Recommendation Frequency Relates to\nForeign and Fomestic Revenue Share",
     "Number of Reddit Recommendations",
-    "Share of total revenue earned internationally\n(International share = 1 − domestic share)"
+    "Share of Total Revenue Earned Internationally\n(International share = 1 − Domestic Share)"
     )
 
     if plotted_any:
@@ -230,9 +228,7 @@ def analyze_rq1(connection) -> pd.DataFrame:
     return df
 
 
-# =========================
 # RQ2
-# =========================
 
 RQ2_SQL = """
 SELECT
@@ -344,9 +340,7 @@ def analyze_rq2(connection) -> pd.DataFrame:
     return df
 
 
-# =========================
 # RQ3
-# =========================
 
 RQ3_SQL = """
 SELECT
